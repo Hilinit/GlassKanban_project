@@ -12,18 +12,30 @@ if (!process.env.JWT_SECRET) {
 
 const app = express()
 
-// Yalnız bizim frontend ünvanlarından gələn sorğulara icazə verilir
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
-    .split(',')
-    .map(url => url.trim().replace(/\/$/, ''))
+// İcazə verilən ünvanlar (Vercel və yerli mühit)
+const allowedOrigins = [
+    'https://glass-kanban-project.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+]
+
+// Əgər .env-də CLIENT_URL təyin olunubsa, onları da əlavə edək
+if (process.env.CLIENT_URL) {
+    process.env.CLIENT_URL.split(',').forEach(url => {
+        const trimmed = url.trim().replace(/\/$/, '')
+        if (!allowedOrigins.includes(trimmed)) allowedOrigins.push(trimmed)
+    })
+}
 
 app.use(cors({
     origin(origin, callback) {
-        // origin yoxdursa (curl, health check) icazə ver
+        // origin yoxdursa (curl, postman, health check) icazə ver
         if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
-        callback(null, false) // CORS başlıqları verilmir, brauzer sorğunu özü bloklayır
-    }
+        callback(null, false) // CORS başlıqları verilmir, brauzer sorğunu bloklayır
+    },
+    credentials: true
 }))
+
 app.use(express.json())
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
