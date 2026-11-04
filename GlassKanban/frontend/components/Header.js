@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { logout } from '@/lib/auth'
+import { initials } from '@/lib/format'
 
 // Üst panel: loqo + (istəyə görə) idarəetmə elementləri + istifadəçi
 export default function Header({ user, children }) {
@@ -15,9 +16,11 @@ export default function Header({ user, children }) {
                 {children}
                 {user && (
                     <div className="user-box">
-                        <span className="user-name"><i className="fa-regular fa-user"></i> {user.name}</span>
-                        <button className="btn-cancel" onClick={logout} type="button">
-                            <i className="fa-solid fa-right-from-bracket"></i> Çıxış
+                        <div className="avatar" title={user.email}>{initials(user.name)}</div>
+                        <span className="user-name">{user.name}</span>
+                        <button className="btn-cancel" onClick={logout} type="button" title="Çıxış">
+                            <i className="fa-solid fa-right-from-bracket"></i>
+                            <span className="hide-mobile">Çıxış</span>
                         </button>
                     </div>
                 )}

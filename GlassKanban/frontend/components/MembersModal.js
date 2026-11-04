@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import Modal from '@/components/Modal'
+import { useUI } from '@/components/UIProvider'
 import { initials } from '@/lib/format'
 
 // Workspace üzvlərinin siyahısı + e-poçt ilə yeni üzv əlavə etmək
 export default function MembersModal({ workspace, user, onClose, onChange }) {
-    const [members, setMembers] = useState([])
+    const { toast, confirm } = useUI()
+    const [members, setMembers] = useState(null)
     const [email, setEmail] = useState('')
     const [error, setError] = useState('')
 
@@ -27,7 +29,8 @@ export default function MembersModal({ workspace, user, onClose, onChange }) {
         e.preventDefault()
         setError('')
         try {
-            await api(`/api/workspaces/${workspace.id}/members`, { method: 'POST', body: { email } })
+            const data = await api(`/api/workspaces/${workspace.id}/members`, { method: 'POST', body: { email } })
+            toast(`${data.member.name} komandaya əlavə olundu`, 'success')
             setEmail('')
             await loadMembers()
             onChange()
@@ -38,10 +41,17 @@ export default function MembersModal({ workspace, user, onClose, onChange }) {
 
     async function removeMember(member) {
         const isSelf = member.id === user.id
-        const text = isSelf ? 'Workspace-dən ayrılmaq istəyirsən?' : `${member.name} workspace-dən çıxarılsın?`
-        if (!confirm(text)) return
+        const ok = await confirm({
+            title: isSelf ? 'Workspace-dən ayrıl' : 'Üzvü çıxar',
+            message: isSelf
+                ? `"${workspace.name}" workspace-indən ayrılmaq istəyirsən? Bir daha əlavə olunmayana qədər board-lara çıxışın olmayacaq.`
+                : `${member.name} workspace-dən çıxarılsın? Ona təyin olunmuş tapşırıqlar "təyin olunmayıb" olacaq.`,
+            confirmText: isSelf ? 'Ayrıl' : 'Çıxar'
+        })
+        if (!ok) return
         try {
             await api(`/api/workspaces/${workspace.id}/members/${member.id}`, { method: 'DELETE' })
+            toast(isSelf ? 'Workspace-dən ayrıldın' : `${member.name} çıxarıldı`, 'success')
             if (isSelf) {
                 onClose()
             } else {
@@ -49,14 +59,15 @@ export default function MembersModal({ workspace, user, onClose, onChange }) {
             }
             onChange()
         } catch (err) {
-            setError(err.message)
+            toast(err.message, 'error')
         }
     }
 
     return (
         <Modal title={`Üzvlər — ${workspace.name}`} onClose={onClose}>
             <div className="member-list">
-                {members.map(m => (
+                {!members && !error && <div className="skeleton-line"></div>}
+                {members && members.map(m => (
                     <div className="member-row" key={m.id}>
                         <div className="avatar">{initials(m.name)}</div>
                         <div className="member-info">
@@ -69,6 +80,7 @@ export default function MembersModal({ workspace, user, onClose, onChange }) {
                                 className="icon-btn"
                                 onClick={() => removeMember(m)}
                                 title={m.id === user.id ? 'Ayrıl' : 'Çıxar'}
+                                aria-label={m.id === user.id ? 'Ayrıl' : 'Çıxar'}
                                 type="button"
                             >
                                 <i className="fa-solid fa-user-minus"></i>

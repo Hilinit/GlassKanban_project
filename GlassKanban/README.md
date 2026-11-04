@@ -18,8 +18,13 @@ with columns and tasks. Everything is stored in PostgreSQL.
 - Add, rename, delete and drag columns to reorder them
 - Create, edit, delete tasks; drag and drop between columns
 - Task description, priority, due date, assignee, comments
-- Search and filters (priority, assignee)
-- The board refreshes every 6 seconds, so teammates see each other's changes
+- Search and filters (priority, assignee); press `/` to jump to search
+- Styled pop-up dialogs for delete/leave confirmations and toast notifications (no browser alerts)
+- Instant (optimistic) UI updates; the board still refreshes every 6 seconds, so teammates see each other's changes
+- Task window: priority buttons, due-date shortcuts (today / tomorrow / 1 week), "assign to me", move to another column, Ctrl+Enter to save
+- Overdue / due-soon highlighting, task count and completion progress (last column counts as "done")
+- Board background picker (saved per board in this device's browser)
+- Skeleton loading screens and a hint when the free Render server is waking up
 
 ## Project structure
 

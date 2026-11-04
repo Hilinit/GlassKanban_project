@@ -1,4 +1,4 @@
-// Tarix köməkçiləri (aylar Azərbaycan dilində, əvvəlki versiyadakı kimi)
+// Tarix və mətn köməkçiləri (aylar Azərbaycan dilində)
 const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr']
 
 // '2026-12-01' -> '1 Dekabr 2026'
@@ -16,9 +16,35 @@ export function formatDateTime(isoString) {
     return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm}`
 }
 
-// Bu gün 'YYYY-MM-DD' formatında (istifadəçinin yerli vaxtı ilə)
-export function todayString() {
+// Bu gündən neçə gün qalıb? (mənfi = keçib)
+export function daysUntil(dateString) {
+    const [year, month, day] = dateString.split('-').map(Number)
+    const now = new Date()
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    return Math.round((Date.UTC(year, month - 1, day) - today) / 86400000)
+}
+
+// 'overdue' (keçib) | 'soon' (bu gün/sabah) | 'ok'
+export function dueStatus(dateString) {
+    const days = daysUntil(dateString)
+    if (days < 0) return 'overdue'
+    if (days <= 1) return 'soon'
+    return 'ok'
+}
+
+// Kartda göstəriləcək qısa yazı: Bu gün / Sabah / Dünən / tarix
+export function dueLabel(dateString) {
+    const days = daysUntil(dateString)
+    if (days === 0) return 'Bu gün'
+    if (days === 1) return 'Sabah'
+    if (days === -1) return 'Dünən'
+    return formatDate(dateString)
+}
+
+// Bu gündən offset gün sonrakı tarix, 'YYYY-MM-DD' formatında
+export function dateFromToday(offset) {
     const d = new Date()
+    d.setDate(d.getDate() + offset)
     const mm = String(d.getMonth() + 1).padStart(2, '0')
     const dd = String(d.getDate()).padStart(2, '0')
     return `${d.getFullYear()}-${mm}-${dd}`
