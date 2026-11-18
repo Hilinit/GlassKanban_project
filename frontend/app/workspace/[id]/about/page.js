@@ -30,6 +30,7 @@ export default function WorkspaceAboutPage() {
     const [loadError, setLoadError] = useState('')
     const [notFound, setNotFound] = useState(false)
     const [saving, setSaving] = useState(false)
+    const [editing, setEditing] = useState(false)
     const loadRequest = useRef(0)
 
     const loadWorkspace = useCallback(async () => {
@@ -39,6 +40,7 @@ export default function WorkspaceAboutPage() {
             if (request !== loadRequest.current) return
             setWorkspace(data.workspace)
             setForm(formFromWorkspace(data.workspace))
+            setEditing(false)
             setLoadError('')
             setNotFound(false)
         } catch (err) {
@@ -64,6 +66,11 @@ export default function WorkspaceAboutPage() {
         setForm(current => ({ ...current, [key]: value }))
     }
 
+    function cancelEditing() {
+        setForm(formFromWorkspace(workspace))
+        setEditing(false)
+    }
+
     async function save(e) {
         e.preventDefault()
         if (!form || saving) return
@@ -84,6 +91,7 @@ export default function WorkspaceAboutPage() {
             })
             setWorkspace(current => ({ ...current, ...data.workspace }))
             setForm(formFromWorkspace(data.workspace))
+            setEditing(false)
             window.dispatchEvent(new Event('gk-workspaces-changed'))
             toast('Layihə məlumatları yadda saxlanıldı', 'success')
         } catch (err) {
@@ -119,11 +127,23 @@ export default function WorkspaceAboutPage() {
                     <WorkspaceNav workspace={workspace} tab="about" />
                     <section className="glass-panel project-about-panel">
                         <div className="section-bar">
-                            <h3>{workspace.role === 'owner' ? 'Layihə məlumatlarını redaktə et' : 'Layihə məlumatları'}</h3>
+                            <h3>{editing ? 'Layihə məlumatlarını redaktə et' : 'Layihə məlumatları'}</h3>
+                            {workspace.role === 'owner' && !editing && (
+                                <button
+                                    className="btn-cancel btn-small"
+                                    type="button"
+                                    onClick={() => {
+                                        setForm(formFromWorkspace(workspace))
+                                        setEditing(true)
+                                    }}
+                                >
+                                    <i className="fa-solid fa-pen"></i> Redaktə et
+                                </button>
+                            )}
                             {workspace.role !== 'owner' && <span className="role-tag">Yalnız owner dəyişə bilər</span>}
                         </div>
 
-                        {workspace.role === 'owner' && form ? (
+                        {workspace.role === 'owner' && editing && form ? (
                             <form onSubmit={save}>
                                 <div className="field-row">
                                     <div className="field">
@@ -199,9 +219,14 @@ export default function WorkspaceAboutPage() {
                                 </div>
                                 <div className="project-about-actions">
                                     <p className="hint">Dəyişikliklər workspace üzvlərinin hamısına görünəcək.</p>
-                                    <button className="btn" type="submit" disabled={saving}>
-                                        {saving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri yadda saxla'}
-                                    </button>
+                                    <div className="inline-actions">
+                                        <button className="btn" type="submit" disabled={saving}>
+                                            {saving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri yadda saxla'}
+                                        </button>
+                                        <button className="btn-cancel" type="button" onClick={cancelEditing} disabled={saving}>
+                                            Ləğv et
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         ) : (
